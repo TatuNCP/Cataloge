@@ -114,7 +114,7 @@ function filtrarCatalogo(categoriaSeleccionada) {
 }
 
 
-// 4. CARD GENERATION (Currency CAD)
+// 4. CARD GENERATION (Currency CAD) - CON CORRECCIÓN DE ERROR EN DESCRIPCIÓN
 function generarTarjetas(lotes) {
     const container = document.getElementById('catalogo-container');
     container.innerHTML = '';
@@ -128,11 +128,14 @@ function generarTarjetas(lotes) {
         // Price formatting (using CAD currency)
         const prixFormate = new Intl.NumberFormat('fr-FR', {
             style: 'currency',
-            currency: 'CAD', // CAMBIO A DÓLARES CANADIENSES
+            currency: 'CAD',
             minimumFractionDigits: 2
         }).format(lote.prix);
 
-        // Safety check for imageURL (fixes the undefined error)
+        // **LÍNEA CORREGIDA:** Usamos un control para asegurar que la descripción es una cadena.
+        // Si lote.descripcion es undefined/null, usamos una cadena vacía ('') antes de usar .replace()
+        const safeDescripcion = (lote.descripcion || '').replace(/'/g, "\\'");
+
         const imagenUrlSafe = lote.imageURL || '';
 
         const tarjetaHTML = `
@@ -143,8 +146,9 @@ function generarTarjetas(lotes) {
                 <strong>Prix: ${prixFormate}</strong>
 
                 <div class="card-actions">
-                    <button onclick="verDetalle('${lote.lot}', '${imagenUrlSafe}', '${prixFormate}')">Voir Détail</button>
-                    <button onclick="anadirAlCarrito('${lote.lot}', '${lote.descripcion.replace(/'/g, "\\'")}', ${lote.prix})">Ajouter à la Demande</button>
+                    <button onclick="verDetalle('${lote.lot}', '${imagenUrlSafe}', '${prixFormate}', ${lote.prix})">Voir Détail</button>
+
+                    <button onclick="anadirAlCarrito('${lote.lot}', '${safeDescripcion}', ${lote.prix})">Ajouter à la Demande</button>
                 </div>
             </div>
         `;
@@ -153,18 +157,21 @@ function generarTarjetas(lotes) {
 }
 
 // 5. MODAL DETAIL LOGIC (PDF IMAGE)
-function verDetalle(lote, imagenURL, prixFormate) {
+function verDetalle(lote, imagenURL, prixFormate, precioNumerico) { // <-- Añadimos precioNumerico
     const modalBody = document.getElementById('modal-body');
 
-    // DEBUGGING CONSOLE LOGS
-    console.log("DEBUG: Ruta de Imagen recibida (imagenURL):", imagenURL);
+    // Recuperar la descripción real del catálogo (usando el campo correcto 'descripcion')
+    const loteCompleto = catalogoData.find(item => item.lot === lote);
+    const descripcionLarga = loteCompleto ? loteCompleto.descripcion : 'Description non disponible.';
 
-    // Modal content
+    // Contenido del Modal
     modalBody.innerHTML = `
-        <span style="font-size: 1.5em; margin-bottom: 10px;">Lot ${lote} - Prix: ${prixFormate}</span>
-        <img src="${imagenURL}" alt="Détail du Lot ${lote}">
-        <button onclick="anadirAlCarrito('${lote}', '', 0); cerrarModal();">Ajouter à la Demande</button>
-    `;
+    <span style="font-size: 1.5em; margin-bottom: 10px; color: white;">Lot ${lote} - Prix: ${prixFormate}</span>
+    <p style="color: white;">Description: ${descripcionLarga}</p>
+    <img src="${imagenURL}" alt="Détail du Lot ${lote}">
+
+    <button style="margin-top: 20px;" onclick="anadirAlCarrito...
+`;
 
     modal.style.display = 'block'; // Show the modal
 }
